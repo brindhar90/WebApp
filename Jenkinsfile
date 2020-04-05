@@ -21,7 +21,7 @@ node {
     }
 
     stage('Maven build') {
-        buildInfo = rtMaven.run pom: 'pom.xml', goals: 'install'
+        buildInfo = rtMaven.run pom: 'pom.xml', goals: 'compile'
     }
 
     stage('Publish build info') {
