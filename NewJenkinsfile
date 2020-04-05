@@ -18,7 +18,7 @@
            stage("Maven build") {
              agent any
              steps {
-               sh 'mvn compile'
+               sh 'mvn clean install'
                }
              }
              
