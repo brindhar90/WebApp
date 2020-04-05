@@ -55,6 +55,15 @@
 			<artifactId>mockito-all</artifactId>
 			<version>1.9.5</version>
 		</dependency>
+		
+		<dependency>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-clean-plugin</artifactId>
+  <version>3.1.0</version>
+  <type>maven-plugin</type>
+</dependency>
+		
+		
 	</dependencies>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
