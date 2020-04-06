@@ -27,11 +27,15 @@
           stage("Deploy to QA") {
           agent any
             steps {
-                     sh 'mvn package'
+                    script{
+                     def rtMaven = Artifactory.newMavenBuild()
+                     def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
                      sh '''#!/bin/bash
-                           deploy adapters: [tomcat7($credentialsId: '1e53ab8e-b030-4009-b0db-365393ca3a1a', $path: '', $url: 'http://18.218.133.60:8080/')], contextPath: '/QAWebapp', war: '**/*.war'
+                          // deploy adapters: [tomcat7($credentialsId: '1e53ab8e-b030-4009-b0db-365393ca3a1a', $path: '', $url: 'http://18.218.133.60:8080/')], contextPath: '/QAWebapp', war: '**/*.war'
+                            def tc7 = tomcat7(url: 'http://18.218.133.60:8080/', credentialsId: '1e53ab8e-b030-4009-b0db-365393ca3a1a')
+                            deploy(adapters: [tc7], war: '**/*.war', contextPath: '/QAWebapp')
                         '''
-                    
+                    }
                   }
              }
            
