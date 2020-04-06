@@ -54,9 +54,14 @@
 
               stage("Functional Test") {
                   agent any
-                  steps {
-                      sh 'mvn -f functionaltest/pom.xml test'
-                      sh "publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '\\functionaltest\\target\\surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: ''])"
+                  steps { 
+                      script {
+                          def rtMaven = Artifactory.newMavenBuild()
+                          def buildInfo = rtMaven.run pom: 'functionaltest/pom.xml', goals: 'test'
+                          def tar = target(allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '\\functionaltest\\target\\surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: '')
+                          publishHTML(tar)
+                      }
+                  
                   }
               } 
 
