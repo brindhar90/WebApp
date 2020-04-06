@@ -35,6 +35,7 @@
            
 
           stage("Upload to Artifactory"){
+          agent any
               steps{
 
                    script{
