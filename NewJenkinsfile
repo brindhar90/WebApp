@@ -22,15 +22,6 @@
                sh 'mvn clean install'
                }
              }
-          
-          
-          stage("Functional Test") {
-          agent any
-            steps {
-                   sh 'mvn -f functionaltest/pom.xml test'
-                   sh "publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '\\functionaltest\\target\\surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: ''])"
-             }
-            }
             
           
           stage("Deploy to QA") {
@@ -38,7 +29,7 @@
             steps {
                      sh 'mvn package'
                      sh '''#!/bin/bash
-                           deploy adapters: [tomcat7(credentialsId: '1e53ab8e-b030-4009-b0db-365393ca3a1a', path: '', url: 'http://18.218.133.60:8080/')], contextPath: '/QAWebapp', war: '**/*.war'
+                           deploy adapters: [tomcat7($credentialsId: '1e53ab8e-b030-4009-b0db-365393ca3a1a', $path: '', $url: 'http://18.218.133.60:8080/')], contextPath: '/QAWebapp', war: '**/*.war'
                         '''
                     
                   }
@@ -64,6 +55,13 @@
           }
           
         
+          stage("Functional Test") {
+          agent any
+            steps {
+                   sh 'mvn -f functionaltest/pom.xml test'
+                   sh "publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '\\functionaltest\\target\\surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: ''])"
+             }
+            }
       
              
           }
