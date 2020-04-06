@@ -44,7 +44,7 @@
                       rtMaven.deployer releaseRepo:'libs-release-local', snapshotRepo:'libs-snapshot-local', server: server
                       rtMaven.resolver releaseRepo:'libs-release', snapshotRepo:'libs-snapshot', server: server
                       rtMaven.deployer.artifactDeploymentPatterns.addInclude("*.war").addExclude("*.zip")
-                      def buildInfo = rtMaven.run pom: 'maven-example/pom.xml', goals: 'package'
+                      def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
                       server.publishBuildInfo buildInfo
                       
                   }
