@@ -27,10 +27,12 @@
           stage("Deploy to QA") {
           agent any
             steps {
-                    script{
+                   
                      sh 'mvn package'
-                     deploy adapters [tomcat7 (credentialsId: 'tomcat', path: '', url: 'http://18.218.133.60:8080/')], contextPath: '/QAWebapp', onFailure: false, war: '**/*.war'
-                    }
+                     sh '''#!/bin/bash
+                     deploy adapters: [tomcat7 (credentialsId: 'tomcat', path: '', url: 'http://18.218.133.60:8080/')], contextPath: '/QAWebapp', onFailure: false, war: '**/*.war'
+                     '''
+                    
                   }
              }
            
