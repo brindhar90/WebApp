@@ -32,8 +32,7 @@
                     
                   }
              }
-             
-        stages{
+           
 
           stage('UPload to Artifactory'){
               steps{
@@ -47,7 +46,7 @@
 
               }   
           }
-      }
+      
              
           }
        }
