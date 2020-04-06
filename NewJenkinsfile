@@ -34,7 +34,7 @@
              }
            
 
-          stage("Upload to Artifactory"){
+          stage("Deploy to Artifactory"){
           agent any
               steps{
 
