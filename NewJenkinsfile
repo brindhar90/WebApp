@@ -1,81 +1,110 @@
       pipeline {
-        agent none
-        tools {
-          maven 'maven'
-        }
-        
-   
-        stages {
-  
-          stage("Source code analysis test") {
-            agent any
-            steps {
-             withSonarQubeEnv('sonarqube') {
-               sh 'mvn compile sonar:sonar -Dsonar.host.url=http://18.217.60.35:9000/ -Dsonar.sources=. -Dsonar.tests=. -Dsonar.test.inclusions=**/test/java/servlet/createpage_junit.java -Dsonar.exclusions=**/test/java/servlet/createpage_junit.java -Dsonar.login=admin -Dsonar.password=admin'
-             }
-            }
-          }    
-          
-           stage("Maven build") {
-             agent any
-             steps {
-               sh 'mvn clean install'
-               }
-             }
-            
-          
-          stage("Deploy to QA") {
-          agent any
-            steps {
-                    script{
-                     def rtMaven = Artifactory.newMavenBuild()
-                     def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
-                   
-                            def tc7 = tomcat7(url: 'http://18.218.133.60:8080/', credentialsId: '1e53ab8e-b030-4009-b0db-365393ca3a1a')
-                            deploy(adapters: [tc7], war: '**/*.war', contextPath: '/QAWebapp')
-                       
-                    }
-                  }
-             }
-
-           stage ('Send Slack notification') {
-           agent any
-            steps {
-              slackSend (color: '#FFFF00', message: "STARTED: Pipeline ran successfully")
-               } 
-             }
-       
-  
-          stage("Deploy to Artifactory"){
-          agent any
-              steps{
-
-                   script{
-                      def server = Artifactory.server 'artifactory'
-                      def rtMaven = Artifactory.newMavenBuild()
-                      rtMaven.deployer releaseRepo:'libs-release-local', snapshotRepo:'libs-snapshot-local', server: server
-                      rtMaven.resolver releaseRepo:'libs-release', snapshotRepo:'libs-snapshot', server: server
-                      rtMaven.deployer.artifactDeploymentPatterns.addInclude("*.war").addExclude("*.zip")
-                      def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
-                      server.publishBuildInfo buildInfo
-                      
-                  }
-
-              }   
+          agent none
+          tools {
+              maven 'maven'
           }
-          
-        
-         stage("Functional Test") {
-          agent any
-            steps {
-                   sh 'mvn -f functionaltest/pom.xml test'
-                   sh "publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '\\functionaltest\\target\\surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: ''])"
-             }
-            }
-            
-        
-   
-      
-             
+
+          stages {
+
+              stage("Source code analysis") {
+                  agent any
+                  steps {
+                      withSonarQubeEnv('sonarqube') {
+                          sh 'mvn compile sonar:sonar -Dsonar.host.url=http://18.217.60.35:9000/ -Dsonar.sources=. -Dsonar.tests=. -Dsonar.test.inclusions=**/test/java/servlet/createpage_junit.java -Dsonar.exclusions=**/test/java/servlet/createpage_junit.java -Dsonar.login=admin -Dsonar.password=admin'
+                      }
+                  }
+              }
+
+              stage("Maven build") {
+                  agent any
+                  steps {
+                      sh 'mvn clean install'
+                  }
+              }
+
+              stage("Deploy to QA") {
+                  agent any
+                  steps {
+                      script {
+                          def rtMaven = Artifactory.newMavenBuild()
+                          def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
+                          def tc7 = tomcat7(url: 'http://18.218.133.60:8080/', credentialsId: '1e53ab8e-b030-4009-b0db-365393ca3a1a')
+                          deploy(adapters: [tc7], war: '**/*.war', contextPath: '/QAWebapp')
+                      }
+                  }
+              }
+
+              stage("Deploy to Artifactory") {
+                  agent any
+                  steps {
+
+                      script {
+                          def server = Artifactory.server 'artifactory'
+                          def rtMaven = Artifactory.newMavenBuild()
+                          rtMaven.deployer releaseRepo: 'libs-release-local', snapshotRepo: 'libs-snapshot-local', server: server
+                          rtMaven.resolver releaseRepo: 'libs-release', snapshotRepo: 'libs-snapshot', server: server
+                          rtMaven.deployer.artifactDeploymentPatterns.addInclude("*.war").addExclude("*.zip")
+                          def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
+                          server.publishBuildInfo buildInfo
+
+                      }
+
+                  }
+              }
+
+              stage("Functional Test") {
+                  agent any
+                  steps {
+                      sh 'mvn -f functionaltest/pom.xml test'
+                      sh "publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '\\functionaltest\\target\\surefire-reports', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: ''])"
+                  }
+              }
+
+              stage("Blazemeter Performance Test") {
+                  agent any
+                  steps {
+                      script {
+                          blazeMeterTest credentialsId: 'PerformaceTest', testId: '7895517.taurus', workspaceId: '461102'
+                      }
+                  }
+              }
+
+
+              stage('Send Jira notification') {
+                  agent any
+                  steps {
+                      script {
+                          step([$class: 'hudson.plugins.jira.JiraIssueUpdater',
+                              issueSelector: [$class: 'hudson.plugins.jira.selector.DefaultIssueSelector'],
+                              scm: [$class: 'GitSCM', branches: [
+                                      [name: '*/master']
+                                  ],
+                                  userRemoteConfigs: [
+                                      [url: 'https://github.com/brindhar90/WebApp']
+                                  ]
+                              ]
+                          ])
+                      }
+                  }
+              }
+
+              stage("Deploy to PROD") {
+                  agent any
+                  steps {
+                      script {
+                          def rtMaven = Artifactory.newMavenBuild()
+                          def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
+                          def tc7 = tomcat7(url: 'http://18.188.76.4:8080/', credentialsId: '1e53ab8e-b030-4009-b0db-365393ca3a1a')
+                          deploy(adapters: [tc7], war: '**/*.war', contextPath: '/ProdWebapp')
+                      }
+                  }
+              }
+
+              stage('Send Slack notification') {
+                  agent any
+                  steps {
+                      slackSend(color: '#FFFF00', message: "Pipeline ran successfully")
+                  }
+              }
           }
-       }
+      }
