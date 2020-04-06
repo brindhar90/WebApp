@@ -27,9 +27,10 @@
           stage("Deploy to QA") {
           agent any
             steps {
+                    script{
                      sh 'mvn package'
-           
-                    
+                     deploy adapters [tomcat7 (credentialsId: 'tomcat', path: '', url: 'http://18.218.133.60:8080/')], contextPath: '/QAWebapp', onFailure: false, war: '**/*.war'
+                    }
                   }
              }
            
@@ -43,8 +44,8 @@
                       def rtMaven = Artifactory.newMavenBuild()
                       rtMaven.deployer releaseRepo:'libs-release-local', snapshotRepo:'libs-snapshot-local', server: server
                       rtMaven.resolver releaseRepo:'libs-release', snapshotRepo:'libs-snapshot', server: server
-                      rtMaven.deployer.artifactDeploymentPatterns.addInclude("*.war").addExclude("*.zip")
-                      def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
+                     // rtMaven.deployer.artifactDeploymentPatterns.addInclude("*.war").addExclude("*.zip")
+                      //def buildInfo = rtMaven.run pom: 'pom.xml', goals: 'package'
                       server.publishBuildInfo buildInfo
                       
                   }
