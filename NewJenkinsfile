@@ -69,7 +69,7 @@
                   agent any
                   steps {
                       script {
-                          blazeMeterTest credentialsId: 'Blazetoken', testId: '7895517.taurus', workspaceId: '461102'
+                          blazeMeterTest credentialsId: 'blazetoken1', testId: '', workspaceId: '461131'
                       }
                   }
               }
